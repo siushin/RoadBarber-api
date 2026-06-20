@@ -1,11 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
 	"roadbarber/backend/internal/config"
-	"roadbarber/backend/internal/models"
+	dbmigrate "roadbarber/backend/internal/migrate"
 	"roadbarber/backend/internal/routes"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,19 +25,24 @@ func main() {
 	// 初始化配置
 	cfg := config.Load()
 
-	// 初始化数据库
+	// 运行数据库迁移（golang-migrate 自动 up 到最新版本）
+	databaseURL := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName,
+	)
+	if err := dbmigrate.Run("file://./migrations", databaseURL); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+	log.Println("Migrations applied successfully")
+
+	// 初始化数据库连接（GORM）
 	if err := config.InitDB(cfg); err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// 自动迁移数据库表
-	if err := models.AutoMigrate(); err != nil {
-		log.Fatalf("Failed to migrate database: %v", err)
-	}
-
-	// 初始化 Redis
+	// 初始化 Redis（失败时仅警告，开发期可无 Redis 启动）
 	if err := config.InitRedis(cfg); err != nil {
-		log.Fatalf("Failed to connect to Redis: %v", err)
+		log.Printf("Warning: Redis not available, continuing without it: %v", err)
 	}
 
 	// 创建 Fiber 应用
