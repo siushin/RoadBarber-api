@@ -1,0 +1,50 @@
+# ====== 环境配置 ======
+.env
+.env.local
+.env.*.local
+.envrc
+
+# ====== 系统文件 ======
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+*.swp
+*.swo
+*~
+.fseventsd
+.Spotlight-V100
+.Trashes
+
+# ====== IDE ======
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# ====== Go 构建产物 ======
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# ====== Go 测试 ======
+*.test
+*.out
+coverage.txt
+coverage.html
+*.coverprofile
+
+# ====== 日志 ======
+*.log
+logs/
+
+# ====== 临时文件 ======
+tmp/
+temp/
+.tmp/
+.cache/
