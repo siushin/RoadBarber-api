@@ -10,6 +10,10 @@ import (
 // RegisterRoutes 注册管理员端路由
 func RegisterRoutes(app *fiber.App) {
 	adminHandler := handler.NewAdminHandler()
+	shopHandler := handler.NewAdminShopHandler()
+	serviceHandler := handler.NewAdminServiceHandler()
+	bookingHandler := handler.NewAdminBookingHandler()
+	reviewHandler := handler.NewAdminReviewHandler()
 
 	api := app.Group("/api")
 
@@ -27,4 +31,21 @@ func RegisterRoutes(app *fiber.App) {
 	admin.Get("/merchant-apply/applies", adminHandler.ListApplies)
 	admin.Patch("/merchant-apply/applies/:id/approve", adminHandler.ApproveApply)
 	admin.Patch("/merchant-apply/applies/:id/reject", adminHandler.RejectApply)
+
+	// 店铺管理
+	admin.Get("/shops", shopHandler.List)
+	admin.Post("/shops", shopHandler.Create)
+	admin.Put("/shops/:id", shopHandler.Update)
+
+	// 服务项目
+	admin.Get("/services", serviceHandler.List)
+	admin.Post("/services", serviceHandler.Create)
+	admin.Put("/services/:id", serviceHandler.Update)
+
+	// 预约管理
+	admin.Get("/bookings", bookingHandler.List)
+
+	// 评价管理
+	admin.Get("/reviews", reviewHandler.List)
+	admin.Delete("/reviews/:id", reviewHandler.Delete)
 }

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"roadbarber/backend/internal/models"
 	"roadbarber/backend/internal/modules/admin/service"
 	"roadbarber/backend/pkg/response"
 
@@ -63,7 +64,7 @@ func (h *AdminHandler) VerifyMerchant(c *fiber.Ctx) error {
 		return response.BadRequest(c, "参数解析失败")
 	}
 
-	if req.AuditStatus != models_AuditApproved && req.AuditStatus != models_AuditRejected {
+	if req.AuditStatus != models.AuditStatusApproved && req.AuditStatus != models.AuditStatusRejected {
 		return response.BadRequest(c, "审核状态错误")
 	}
 
@@ -119,7 +120,7 @@ func (h *AdminHandler) RejectApply(c *fiber.Ctx) error {
 		Reason string `json:"reason"`
 	}
 	if err := c.BodyParser(&req); err != nil {
-		response.BadRequest(c, "参数解析失败")
+		return response.BadRequest(c, "参数解析失败")
 	}
 
 	if err := h.adminService.RejectApply(id, auditorID, req.Reason); err != nil {

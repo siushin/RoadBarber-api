@@ -12,16 +12,41 @@ import (
 
 type AdminService struct{}
 
+// TrendPoint 趋势图数据点
+type TrendPoint struct {
+	Date  string `json:"date"`
+	Count int64  `json:"count"`
+}
+
+// TopMerchant Top 商家
+type TopMerchant struct {
+	ID          string  `json:"id"`
+	Title       string  `json:"title"`
+	Avatar      string  `json:"avatar"`
+	Rating      float64 `json:"rating"`
+	ReviewCount int     `json:"review_count"`
+}
+
+// StatusCount 状态分布
+type StatusCount struct {
+	Status int   `json:"status"`
+	Count  int64 `json:"count"`
+}
+
 // DashboardStats 仪表盘统计
 type DashboardStats struct {
-	TotalCustomers   int64 `json:"total_customers"`
-	TotalMerchants   int64 `json:"total_merchants"`
-	TotalShops       int64 `json:"total_shops"`
-	TodayBookings    int64 `json:"today_bookings"`
-	PendingApplies   int64 `json:"pending_applies"`
-	PendingMerchants int64 `json:"pending_merchants"`
-	TotalBookings    int64 `json:"total_bookings"`
-	TotalReviews     int64 `json:"total_reviews"`
+	TotalCustomers   int64         `json:"total_customers"`
+	TotalMerchants   int64         `json:"total_merchants"`
+	TotalShops       int64         `json:"total_shops"`
+	TodayBookings    int64         `json:"today_bookings"`
+	PendingApplies   int64         `json:"pending_applies"`
+	PendingMerchants int64         `json:"pending_merchants"`
+	TotalBookings    int64         `json:"total_bookings"`
+	TotalReviews     int64         `json:"total_reviews"`
+	MonthRevenue     float64       `json:"month_revenue"`
+	BookingTrend     []TrendPoint  `json:"booking_trend"`
+	TopMerchants     []TopMerchant `json:"top_merchants"`
+	StatusBreakdown  []StatusCount `json:"status_breakdown"`
 }
 
 // GetDashboardStats 仪表盘统计
@@ -46,7 +71,82 @@ func (s *AdminService) GetDashboardStats() (*DashboardStats, error) {
 	// 总评价数
 	db.Model(&models.Review{}).Count(&stats.TotalReviews)
 
+	// 本月营收
+	monthRevenue, _ := MonthRevenue()
+	stats.MonthRevenue = monthRevenue
+
+	// 近 30 日预约趋势
+	stats.BookingTrend = buildBookingTrend(db)
+
+	// Top 5 商家（按 review_count 排）
+	stats.TopMerchants = buildTopMerchants(db)
+
+	// 预约状态分布
+	stats.StatusBreakdown = buildStatusBreakdown(db)
+
 	return &stats, nil
+}
+
+func buildBookingTrend(db *gorm.DB) []TrendPoint {
+	var points []TrendPoint
+	for i := 29; i >= 0; i-- {
+		day := time.Now().AddDate(0, 0, -i)
+		var count int64
+		db.Model(&models.Booking{}).
+			Where("DATE(created_at) = ?", day.Format("2006-01-02")).
+			Count(&count)
+		points = append(points, TrendPoint{
+			Date:  day.Format("01-02"),
+			Count: count,
+		})
+	}
+	return points
+}
+
+func buildTopMerchants(db *gorm.DB) []TopMerchant {
+	type row struct {
+		ID          string
+		Title       string
+		Avatar      string
+		Rating      float64
+		ReviewCount int
+	}
+	var rows []row
+	db.Table("merchants").
+		Select("merchants.id, merchants.title, merchants.avatar, merchants.rating, merchants.review_count").
+		Where("merchants.status = ?", models.MerchantStatusNormal).
+		Order("merchants.review_count DESC, merchants.rating DESC").
+		Limit(5).
+		Scan(&rows)
+
+	out := make([]TopMerchant, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, TopMerchant{
+			ID:          r.ID,
+			Title:       r.Title,
+			Avatar:      r.Avatar,
+			Rating:      r.Rating,
+			ReviewCount: r.ReviewCount,
+		})
+	}
+	return out
+}
+
+func buildStatusBreakdown(db *gorm.DB) []StatusCount {
+	type row struct {
+		Status int8
+		Count  int64
+	}
+	var rows []row
+	db.Model(&models.Booking{}).
+		Select("status, COUNT(*) AS count").
+		Group("status").
+		Scan(&rows)
+	out := make([]StatusCount, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, StatusCount{Status: int(r.Status), Count: r.Count})
+	}
+	return out
 }
 
 // ListMerchantsRequest 商家列表

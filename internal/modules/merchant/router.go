@@ -11,6 +11,11 @@ import (
 func RegisterRoutes(app *fiber.App) {
 	scheduleHandler := handler.NewScheduleHandler()
 	bookingHandler := handler.NewBookingHandler()
+	customerHandler := handler.NewCustomerHandler()
+	reviewHandler := handler.NewMerchantReviewHandler()
+	profileHandler := handler.NewProfileHandler()
+	dashboardHandler := handler.NewDashboardHandler()
+	uploadHandler := handler.NewUploadHandler()
 
 	api := app.Group("/api")
 
@@ -18,6 +23,10 @@ func RegisterRoutes(app *fiber.App) {
 	apply := api.Group("/merchant-apply")
 	apply.Post("/apply", handler.NewMerchantApplyHandler().Apply)
 	apply.Get("/apply", handler.NewMerchantApplyHandler().MyApplies)
+
+	// 文件上传（任意登录用户）
+	uploads := api.Group("/uploads", middleware.Auth())
+	uploads.Post("/", uploadHandler.Upload)
 
 	// 需要商家登录
 	merchant := api.Group("/", middleware.Auth(), middleware.MerchantOnly())
@@ -34,4 +43,18 @@ func RegisterRoutes(app *fiber.App) {
 	merchant.Patch("/bookings/:id/reject", bookingHandler.Reject)
 	merchant.Patch("/bookings/:id/start", bookingHandler.Start)
 	merchant.Patch("/bookings/:id/finish", bookingHandler.Finish)
+
+	// 顾客管理
+	merchant.Get("/customers", customerHandler.List)
+
+	// 评价管理
+	merchant.Get("/reviews", reviewHandler.List)
+	merchant.Post("/reviews/:id/reply", reviewHandler.Reply)
+
+	// 商家资料
+	merchant.Get("/profile", profileHandler.Get)
+	merchant.Put("/profile", profileHandler.Update)
+
+	// 商家仪表盘
+	merchant.Get("/dashboard", dashboardHandler.Get)
 }
