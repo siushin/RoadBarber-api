@@ -23,7 +23,12 @@ type MerchantDashboardStats struct {
 }
 
 // GetStats 商家仪表盘
+// 管理员（role=3）无商家数据，返回全 0 的统计
 func (s *MerchantDashboardService) GetStats(userID string) (*MerchantDashboardStats, error) {
+	if isAdminUser(userID) {
+		return &MerchantDashboardStats{}, nil
+	}
+
 	var merchant models.Merchant
 	if err := config.GetDB().Where("user_id = ?", userID).First(&merchant).Error; err != nil {
 		return nil, errors.New("商家信息不存在")

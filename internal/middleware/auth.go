@@ -38,12 +38,44 @@ func Auth() fiber.Handler {
 	}
 }
 
+// OptionalAuth 可选 JWT 中间件：有 token 时解析 user_id 进 locals，无 token 或非法 token
+// 时直接放行（不报错）。适用于公开接口但登录态下需要按用户上下文做差异化的场景。
+func OptionalAuth() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		authHeader := c.Get("Authorization")
+		if authHeader == "" {
+			return c.Next()
+		}
+
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			return c.Next()
+		}
+
+		token := parts[1]
+		claims, err := utils.ParseToken(token, config.GetJWTSecret())
+		if err != nil {
+			return c.Next()
+		}
+
+		c.Locals("user_id", claims.UserID)
+		c.Locals("role", claims.Role)
+		return c.Next()
+	}
+}
+
 // RequireRole 角色权限中间件
+// 超级管理员（role=3）拥有所有角色权限，无视 roles 列表直接放行
 func RequireRole(roles ...int) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		role, ok := c.Locals("role").(int)
 		if !ok {
 			return response.Unauthorized(c, "未登录")
+		}
+
+		// 超级管理员直通
+		if role == 3 {
+			return c.Next()
 		}
 
 		for _, r := range roles {

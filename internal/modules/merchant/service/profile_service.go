@@ -26,10 +26,15 @@ type UpdateProfileRequest struct {
 }
 
 // GetProfile 获取商家 profile（含 user/merchant/profile）
+// 管理员（role=3）无商家数据，返回 user + 空 merchant
 func (s *ProfileService) GetProfile(userID string) (*ProfileResponse, error) {
 	var user models.User
 	if err := config.GetDB().Where("id = ?", userID).First(&user).Error; err != nil {
 		return nil, errors.New("用户不存在")
+	}
+
+	if user.Role == models.RoleAdmin {
+		return &ProfileResponse{User: user}, nil
 	}
 
 	var merchant models.Merchant
@@ -44,8 +49,13 @@ func (s *ProfileService) GetProfile(userID string) (*ProfileResponse, error) {
 	return &ProfileResponse{User: user, Merchant: merchant}, nil
 }
 
-// UpdateProfile 更新商家基础信息
+// Update 更新商家基础信息
+// 管理员（role=3）无商家数据，不允许修改
 func (s *ProfileService) UpdateProfile(userID string, req *UpdateProfileRequest) error {
+	if isAdminUser(userID) {
+		return errors.New("管理员无商家资料可修改")
+	}
+
 	var merchant models.Merchant
 	if err := config.GetDB().Where("user_id = ?", userID).First(&merchant).Error; err != nil {
 		return errors.New("商家信息不存在")

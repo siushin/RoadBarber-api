@@ -4,12 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	"roadbarber/backend/internal/config"
 	"roadbarber/backend/internal/models"
 	"roadbarber/backend/pkg/utils"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -34,8 +37,11 @@ type LoginByCodeRequest struct {
 }
 
 // LoginByPasswordRequest 密码登录请求
+// Account 可填用户名/手机号/邮箱任一；为兼容小程序端，Phone 字段保留，
+// 当 Account 为空时回退到 Phone。
 type LoginByPasswordRequest struct {
-	Phone    string `json:"phone" validate:"required"`
+	Account  string `json:"account"`
+	Phone    string `json:"phone"`
 	Password string `json:"password" validate:"required"`
 	// Role 可选：登录时校验角色（admin=3 / merchant=2），0/缺省不校验
 	Role int `json:"role" validate:"omitempty,oneof=2 3"`
@@ -53,6 +59,12 @@ type LoginResponse struct {
 	Token    string      `json:"token"`
 	UserInfo models.User `json:"user_info"`
 }
+
+// 账号类型识别
+var (
+	phoneRegex = regexp.MustCompile(`^1[3-9]\d{9}$`)
+	emailRegex = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
+)
 
 // SendCode 发送短信验证码
 func (s *AuthService) SendCode(phone string) error {
@@ -109,9 +121,14 @@ func (s *AuthService) LoginByCode(phone, code string) (*LoginResponse, error) {
 	err = config.GetDB().Where("phone = ?", phone).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// 自动注册
+			// 自动注册：随机分配一个不重名的 username
+			username, uerr := generateUniqueUsername(config.GetDB(), "user_")
+			if uerr != nil {
+				return nil, fmt.Errorf("生成用户名失败: %w", uerr)
+			}
 			user = models.User{
 				Phone:    phone,
+				Username: &username,
 				Nickname: "用户" + phone[7:],
 				Role:     models.RoleCustomer,
 				Status:   models.UserStatusNormal,
@@ -147,14 +164,17 @@ func (s *AuthService) LoginByCode(phone, code string) (*LoginResponse, error) {
 	}, nil
 }
 
-// LoginByPassword 密码登录
-func (s *AuthService) LoginByPassword(phone, password string, expectedRole int8) (*LoginResponse, error) {
-	if phone == "" || password == "" {
-		return nil, errors.New("手机号和密码不能为空")
+// LoginByPassword 密码登录（支持用户名/手机号/邮箱任一账号）
+func (s *AuthService) LoginByPassword(account, password string, expectedRole int8) (*LoginResponse, error) {
+	account = strings.TrimSpace(account)
+	if account == "" {
+		return nil, errors.New("账号不能为空")
+	}
+	if password == "" {
+		return nil, errors.New("密码不能为空")
 	}
 
-	var user models.User
-	err := config.GetDB().Where("phone = ?", phone).First(&user).Error
+	user, err := findUserByAccount(account)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("账号不存在")
@@ -217,9 +237,16 @@ func (s *AuthService) Register(phone, password, nickname string) (*LoginResponse
 		return nil, fmt.Errorf("密码加密失败: %w", err)
 	}
 
+	// 随机分配不重名的 username
+	username, err := generateUniqueUsername(config.GetDB(), "user_")
+	if err != nil {
+		return nil, fmt.Errorf("生成用户名失败: %w", err)
+	}
+
 	// 创建用户
 	user := models.User{
 		Phone:        phone,
+		Username:     &username,
 		PasswordHash: hashedPassword,
 		Nickname:     nickname,
 		Role:         models.RoleCustomer,
@@ -252,4 +279,39 @@ func (s *AuthService) GetUserInfo(userID string) (*models.User, error) {
 		return nil, fmt.Errorf("查询用户失败: %w", err)
 	}
 	return &user, nil
+}
+
+// findUserByAccount 根据账号自动识别用户名/手机号/邮箱并查找用户
+func findUserByAccount(account string) (models.User, error) {
+	var user models.User
+	db := config.GetDB()
+
+	switch {
+	case phoneRegex.MatchString(account):
+		err := db.Where("phone = ?", account).First(&user).Error
+		return user, err
+	case emailRegex.MatchString(account):
+		err := db.Where("email = ?", account).First(&user).Error
+		return user, err
+	default:
+		err := db.Where("username = ?", account).First(&user).Error
+		return user, err
+	}
+}
+
+// generateUniqueUsername 生成全局唯一的 username（前缀 + 6 位数字，重试 20 次后回退到 UUID）
+func generateUniqueUsername(db *gorm.DB, prefix string) (string, error) {
+	for i := 0; i < 20; i++ {
+		candidate := prefix + utils.GenerateCode()
+		var u models.User
+		err := db.Where("username = ?", candidate).First(&u).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return candidate, nil
+		}
+		if err != nil {
+			return "", err
+		}
+	}
+	// 极端情况回退：用 UUID 短串保证唯一
+	return prefix + strings.ReplaceAll(uuid.NewString()[:8], "-", ""), nil
 }

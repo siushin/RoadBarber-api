@@ -1,6 +1,8 @@
 package response
 
 import (
+	"reflect"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -19,12 +21,26 @@ type PageData struct {
 	PageSize int         `json:"page_size"` // 每页数量
 }
 
+// normalizeNilSlice 把 nil slice 替换成同类型的空切片，
+// 避免 GORM 没查到记录时返回的 nil slice 被 encoding/json 序列化成 null，
+// 导致前端 .map(null) / notices.value.length 抛错。
+func normalizeNilSlice(v interface{}) interface{} {
+	if v == nil {
+		return []interface{}{}
+	}
+	rv := reflect.ValueOf(v)
+	if rv.Kind() == reflect.Slice && rv.IsNil() {
+		return reflect.MakeSlice(rv.Type(), 0, 0).Interface()
+	}
+	return v
+}
+
 // Success 成功响应
 func Success(c *fiber.Ctx, data interface{}) error {
 	return c.Status(fiber.StatusOK).JSON(Response{
 		Code:    0,
 		Message: "success",
-		Data:    data,
+		Data:    normalizeNilSlice(data),
 	})
 }
 
@@ -33,7 +49,7 @@ func SuccessWithMessage(c *fiber.Ctx, message string, data interface{}) error {
 	return c.Status(fiber.StatusOK).JSON(Response{
 		Code:    0,
 		Message: message,
-		Data:    data,
+		Data:    normalizeNilSlice(data),
 	})
 }
 
@@ -43,7 +59,7 @@ func PageSuccess(c *fiber.Ctx, list interface{}, total int64, page, pageSize int
 		Code:    0,
 		Message: "success",
 		Data: PageData{
-			List:     list,
+			List:     normalizeNilSlice(list),
 			Total:    total,
 			Page:     page,
 			PageSize: pageSize,

@@ -26,7 +26,12 @@ type MerchantListReviewsRequest struct {
 }
 
 // ListReviews 商家端评价列表
+// 管理员（role=3）无商家数据，返回空列表
 func (s *MerchantReviewService) ListReviews(merchantUserID string, req *MerchantListReviewsRequest) ([]MerchantReviewItem, int64, error) {
+	if isAdminUser(merchantUserID) {
+		return []MerchantReviewItem{}, 0, nil
+	}
+
 	var merchant models.Merchant
 	if err := config.GetDB().Where("user_id = ?", merchantUserID).First(&merchant).Error; err != nil {
 		return nil, 0, errors.New("商家信息不存在")
@@ -84,7 +89,12 @@ func (s *MerchantReviewService) ListReviews(merchantUserID string, req *Merchant
 }
 
 // ReplyReview 商家回复评价
+// 管理员无商家数据，不允许回复
 func (s *MerchantReviewService) ReplyReview(merchantUserID, reviewID, content string) error {
+	if isAdminUser(merchantUserID) {
+		return errors.New("管理员无商家数据，不可回复评价")
+	}
+
 	var merchant models.Merchant
 	if err := config.GetDB().Where("user_id = ?", merchantUserID).First(&merchant).Error; err != nil {
 		return errors.New("商家信息不存在")

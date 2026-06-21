@@ -1,7 +1,9 @@
 -- ================================================================
 -- 000002_seed_demo.up.sql
 -- 演示种子数据：管理员 / 示例顾客 / 示例商家 / 示例服务 / 广东省市区
--- 密码统一：管理员 admin123 / 顾客 customer123 / 商家 merchant123
+-- 密码统一：管理员 admin / 其他 123456
+-- 注意：本迁移在 add_username_email_wechat 之前，
+-- 仅插入最小必填字段，username/email 在 000003 里回填。
 -- ================================================================
 
 BEGIN;
@@ -18,22 +20,23 @@ INSERT INTO locations (id, parent_id, name, code, level, sort_order) VALUES
 
 -- ================================================================
 -- 用户：1 个管理员 + 2 个顾客 + 2 个商家账号
+-- password_hash 临时占位，会在 000011_reset_demo_passwords 中覆盖为可登录哈希
 -- ================================================================
 INSERT INTO users (id, phone, password_hash, nickname, role, status, gender) VALUES
     ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '13800000000',
-     '$2a$10$4mmWi1bOU0F7RVnhpl42eeS6My/i2AmwI4/mcu.yJiaTgMLlWx0YO',
+     '$2a$10$uAkngir84e5pPbtx933Ay.monIig59tqrq8cK183JFiBzlVe1T5EC',
      '超级管理员', 3, 1, 1),
     ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb01', '13900000001',
-     '$2a$10$uViD7cCPtlkdVH6Ku0D/xuIXkvNbz.2k2pF8Km5a/AwI0WtRAVQLm',
+     '$2a$10$RKFxHM2Q7FDdghaQ02YqOegjvvCFNid3M3m5u7UV1RmuuGpGwidOq',
      '小王', 1, 1, 1),
     ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb02', '13900000002',
-     '$2a$10$uViD7cCPtlkdVH6Ku0D/xuIXkvNbz.2k2pF8Km5a/AwI0WtRAVQLm',
+     '$2a$10$RKFxHM2Q7FDdghaQ02YqOegjvvCFNid3M3m5u7UV1RmuuGpGwidOq',
      '小李', 1, 1, 2),
     ('cccccccc-cccc-cccc-cccc-ccccccccccc1', '13900000011',
-     '$2a$10$xeaTjsIRlCepEatQYwpWv.1uppgHYG/9tI34dAWy.XPWS/by4VAaW',
+     '$2a$10$RKFxHM2Q7FDdghaQ02YqOegjvvCFNid3M3m5u7UV1RmuuGpGwidOq',
      'Tony 老师', 2, 1, 1),
     ('cccccccc-cccc-cccc-cccc-ccccccccccc2', '13900000012',
-     '$2a$10$xeaTjsIRlCepEatQYwpWv.1uppgHYG/9tI34dAWy.XPWS/by4VAaW',
+     '$2a$10$RKFxHM2Q7FDdghaQ02YqOegjvvCFNid3M3m5u7UV1RmuuGpGwidOq',
      'Kevin 总监', 2, 1, 1);
 
 -- ================================================================
@@ -89,7 +92,7 @@ INSERT INTO services (id, shop_id, name, description, duration, price, category,
      'eeeeeeee-eeee-eeee-eeee-eeeeeeeeee02', '冷烫', '进口药水冷烫', 120, 388.00, '烫发', 1);
 
 -- ================================================================
--- 排班（schedules）：给两个商家各发布 3 个未来时段
+-- 排班（schedules）：给两个商家各发布 +1、+2 天的时段
 -- ================================================================
 INSERT INTO schedules (id, merchant_id, work_date, start_time, end_time, is_available) VALUES
     (gen_random_uuid(), 'ffffffff-ffff-ffff-ffff-fffffffffff1',

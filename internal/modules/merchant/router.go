@@ -24,37 +24,37 @@ func RegisterRoutes(app *fiber.App) {
 	apply.Post("/apply", handler.NewMerchantApplyHandler().Apply)
 	apply.Get("/apply", handler.NewMerchantApplyHandler().MyApplies)
 
-	// 文件上传（任意登录用户）
-	uploads := api.Group("/uploads", middleware.Auth())
-	uploads.Post("/", uploadHandler.Upload)
+	// 文件上传（任意登录用户，仅 Auth 不限定角色）
+	api.Post("/uploads", middleware.Auth(), uploadHandler.Upload)
 
-	// 需要商家登录
-	merchant := api.Group("/", middleware.Auth(), middleware.MerchantOnly())
+	// 商家登录态：每条路由显式指定 Auth + MerchantOnly，
+	// 避免被注册为 USE 全局中间件而污染 /api/* 其它路由
+	// /bookings 改挂 /merchant/bookings，避免与顾客端 /bookings 同路径冲突
 
 	// 排班管理
-	merchant.Post("/schedules", scheduleHandler.Create)
-	merchant.Post("/schedules/batch", scheduleHandler.BatchCreate)
-	merchant.Get("/schedules", scheduleHandler.List)
-	merchant.Delete("/schedules/:id", scheduleHandler.Delete)
+	api.Post("/schedules", middleware.Auth(), middleware.MerchantOnly(), scheduleHandler.Create)
+	api.Post("/schedules/batch", middleware.Auth(), middleware.MerchantOnly(), scheduleHandler.BatchCreate)
+	api.Get("/schedules", middleware.Auth(), middleware.MerchantOnly(), scheduleHandler.List)
+	api.Delete("/schedules/:id", middleware.Auth(), middleware.MerchantOnly(), scheduleHandler.Delete)
 
-	// 预约管理
-	merchant.Get("/bookings", bookingHandler.List)
-	merchant.Patch("/bookings/:id/confirm", bookingHandler.Confirm)
-	merchant.Patch("/bookings/:id/reject", bookingHandler.Reject)
-	merchant.Patch("/bookings/:id/start", bookingHandler.Start)
-	merchant.Patch("/bookings/:id/finish", bookingHandler.Finish)
+	// 预约管理（挂 /merchant/bookings 避免与顾客端冲突）
+	api.Get("/merchant/bookings", middleware.Auth(), middleware.MerchantOnly(), bookingHandler.List)
+	api.Patch("/merchant/bookings/:id/confirm", middleware.Auth(), middleware.MerchantOnly(), bookingHandler.Confirm)
+	api.Patch("/merchant/bookings/:id/reject", middleware.Auth(), middleware.MerchantOnly(), bookingHandler.Reject)
+	api.Patch("/merchant/bookings/:id/start", middleware.Auth(), middleware.MerchantOnly(), bookingHandler.Start)
+	api.Patch("/merchant/bookings/:id/finish", middleware.Auth(), middleware.MerchantOnly(), bookingHandler.Finish)
 
 	// 顾客管理
-	merchant.Get("/customers", customerHandler.List)
+	api.Get("/customers", middleware.Auth(), middleware.MerchantOnly(), customerHandler.List)
 
 	// 评价管理
-	merchant.Get("/reviews", reviewHandler.List)
-	merchant.Post("/reviews/:id/reply", reviewHandler.Reply)
+	api.Get("/reviews", middleware.Auth(), middleware.MerchantOnly(), reviewHandler.List)
+	api.Post("/reviews/:id/reply", middleware.Auth(), middleware.MerchantOnly(), reviewHandler.Reply)
 
 	// 商家资料
-	merchant.Get("/profile", profileHandler.Get)
-	merchant.Put("/profile", profileHandler.Update)
+	api.Get("/profile", middleware.Auth(), middleware.MerchantOnly(), profileHandler.Get)
+	api.Put("/profile", middleware.Auth(), middleware.MerchantOnly(), profileHandler.Update)
 
 	// 商家仪表盘
-	merchant.Get("/dashboard", dashboardHandler.Get)
+	api.Get("/dashboard", middleware.Auth(), middleware.MerchantOnly(), dashboardHandler.Get)
 }

@@ -24,6 +24,12 @@ type Merchant struct {
 	IsVerified      bool      `gorm:"type:boolean;default:false" json:"is_verified"`
 	IsTop           bool      `gorm:"type:boolean;default:false" json:"is_top"`
 	SortOrder       int       `gorm:"type:int;default:0" json:"sort_order"`
+	Latitude        *float64  `gorm:"type:decimal(10,7)" json:"latitude"`
+	Longitude       *float64  `gorm:"type:decimal(10,7)" json:"longitude"`
+	StartPrice      float64   `gorm:"type:decimal(10,2);not null;default:0" json:"start_price"`
+	BusinessHours   *string   `gorm:"type:varchar(50)" json:"business_hours"`
+	Distance        *float64  `gorm:"type:decimal(10,2)" json:"distance"`
+	AvailableSlots  int       `gorm:"type:int;not null;default:0" json:"available_slots"`
 	CreatedAt       time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt       time.Time `gorm:"not null;default:now()" json:"updated_at"`
 }

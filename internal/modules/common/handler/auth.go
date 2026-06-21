@@ -47,14 +47,20 @@ func (h *AuthHandler) LoginByCode(c *fiber.Ctx) error {
 	return response.Success(c, data)
 }
 
-// LoginByPassword 密码登录
+// LoginByPassword 密码登录（支持用户名/手机号/邮箱任一账号）
 func (h *AuthHandler) LoginByPassword(c *fiber.Ctx) error {
 	var req service.LoginByPasswordRequest
 	if err := c.BodyParser(&req); err != nil {
 		return response.BadRequest(c, "参数解析失败")
 	}
 
-	data, err := h.authService.LoginByPassword(req.Phone, req.Password, int8(req.Role))
+	// 兼容：小程序端仍传 phone 字段；后台传 account
+	account := req.Account
+	if account == "" {
+		account = req.Phone
+	}
+
+	data, err := h.authService.LoginByPassword(account, req.Password, int8(req.Role))
 	if err != nil {
 		return response.BadRequest(c, err.Error())
 	}
