@@ -20,6 +20,8 @@ MIGRATIONS    ?= ./migrations
 help:
 	@echo "Available commands:"
 	@echo "  make run               - 启动后端"
+	@echo "  make run-dev           - 用 air 启动后端（修改 Go 源码自动重启）"
+	@echo "  make install-air       - 安装 air 热重载工具"
 	@echo "  make build             - 编译"
 	@echo "  make migrate/up        - 升级到最新版本"
 	@echo "  make migrate/down      - 回滚所有迁移"
@@ -31,9 +33,23 @@ help:
 # ============================================================
 # 运行
 # ============================================================
-.PHONY: run build tidy
+.PHONY: run run-dev install-air build tidy
 run:
 	go run cmd/main.go
+
+AIR_BIN := $(shell go env GOPATH)/bin/air
+
+run-dev:
+	@if [ ! -x "$(AIR_BIN)" ]; then \
+		echo "❌ 未找到 air（$(AIR_BIN)），请先执行：make install-air"; \
+		exit 1; \
+	fi
+	$(AIR_BIN) -c .air.toml
+
+install-air:
+	@echo "→ 安装 air 到 $(AIR_BIN) ..."
+	go install github.com/air-verse/air@latest
+	@echo "✓ air 已安装：$(AIR_BIN)"
 
 build:
 	go build ./...

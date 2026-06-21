@@ -13,7 +13,14 @@ import (
 	"gorm.io/gorm"
 )
 
-type AuthService struct{}
+type AuthService struct {
+	sms utils.SMSProvider
+}
+
+// NewAuthService 创建 AuthService，注入短信服务商
+func NewAuthService(sms utils.SMSProvider) *AuthService {
+	return &AuthService{sms: sms}
+}
 
 // SendCodeRequest 发送验证码请求
 type SendCodeRequest struct {
@@ -30,6 +37,8 @@ type LoginByCodeRequest struct {
 type LoginByPasswordRequest struct {
 	Phone    string `json:"phone" validate:"required"`
 	Password string `json:"password" validate:"required"`
+	// Role 可选：登录时校验角色（admin=3 / merchant=2），0/缺省不校验
+	Role int `json:"role" validate:"omitempty,oneof=2 3"`
 }
 
 // RegisterRequest 注册请求
@@ -62,9 +71,15 @@ func (s *AuthService) SendCode(phone string) error {
 		return fmt.Errorf("保存验证码失败: %w", err)
 	}
 
-	// TODO: 接入实际短信服务商发送验证码
-	// 调试阶段直接打印到日志
-	fmt.Printf("[SMS] Phone: %s, Code: %s\n", phone, code)
+	// 通过 SMSProvider 发送验证码
+	if s.sms == nil {
+		// 兜底：未注入时走控制台输出
+		fmt.Printf("[SMS] Phone: %s, Code: %s\n", phone, code)
+		return nil
+	}
+	if err := s.sms.Send(phone, code); err != nil {
+		return fmt.Errorf("发送验证码失败: %w", err)
+	}
 
 	return nil
 }
@@ -133,7 +148,7 @@ func (s *AuthService) LoginByCode(phone, code string) (*LoginResponse, error) {
 }
 
 // LoginByPassword 密码登录
-func (s *AuthService) LoginByPassword(phone, password string) (*LoginResponse, error) {
+func (s *AuthService) LoginByPassword(phone, password string, expectedRole int8) (*LoginResponse, error) {
 	if phone == "" || password == "" {
 		return nil, errors.New("手机号和密码不能为空")
 	}
@@ -150,6 +165,11 @@ func (s *AuthService) LoginByPassword(phone, password string) (*LoginResponse, e
 	// 校验密码
 	if !utils.CheckPassword(password, user.PasswordHash) {
 		return nil, errors.New("密码错误")
+	}
+
+	// 角色校验（expectedRole=0 时不校验，向后兼容）
+	if expectedRole != 0 && user.Role != expectedRole {
+		return nil, errors.New("账号角色不匹配")
 	}
 
 	// 检查用户状态

@@ -3,6 +3,7 @@ package handler
 import (
 	"roadbarber/backend/internal/modules/common/service"
 	"roadbarber/backend/pkg/response"
+	"roadbarber/backend/pkg/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -11,9 +12,9 @@ type AuthHandler struct {
 	authService *service.AuthService
 }
 
-func NewAuthHandler() *AuthHandler {
+func NewAuthHandler(sms utils.SMSProvider) *AuthHandler {
 	return &AuthHandler{
-		authService: &service.AuthService{},
+		authService: service.NewAuthService(sms),
 	}
 }
 
@@ -53,7 +54,7 @@ func (h *AuthHandler) LoginByPassword(c *fiber.Ctx) error {
 		return response.BadRequest(c, "参数解析失败")
 	}
 
-	data, err := h.authService.LoginByPassword(req.Phone, req.Password)
+	data, err := h.authService.LoginByPassword(req.Phone, req.Password, int8(req.Role))
 	if err != nil {
 		return response.BadRequest(c, err.Error())
 	}

@@ -3,13 +3,14 @@ package common
 import (
 	"roadbarber/backend/internal/middleware"
 	"roadbarber/backend/internal/modules/common/handler"
+	"roadbarber/backend/pkg/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 // RegisterRoutes 注册公共模块路由（认证、地区等所有端共用的）
-func RegisterRoutes(app *fiber.App) {
-	authHandler := handler.NewAuthHandler()
+func RegisterRoutes(app *fiber.App, sms utils.SMSProvider) {
+	authHandler := handler.NewAuthHandler(sms)
 	locationHandler := handler.NewLocationHandler()
 
 	// API 分组

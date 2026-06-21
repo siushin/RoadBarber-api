@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -41,10 +42,19 @@ func Load() *Config {
 		RedisPort:    getEnv("REDIS_PORT", "6379"),
 		RedisPassword: getEnv("REDIS_PASSWORD", ""),
 		JWTSecret:    getEnv("JWT_SECRET", "your-secret-key-change-in-production"),
-		JWTExpiresIn: 86400,
+		JWTExpiresIn: getEnvInt("JWT_EXPIRES_IN", 86400),
 		ServerPort:   getEnv("PORT", "8080"),
 	}
 	return cfg
+}
+
+func getEnvInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if n, err := strconv.Atoi(value); err == nil && n > 0 {
+			return n
+		}
+	}
+	return defaultValue
 }
 
 func getEnv(key, defaultValue string) string {
