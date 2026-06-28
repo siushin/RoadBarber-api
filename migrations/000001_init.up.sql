@@ -137,12 +137,12 @@ CREATE TABLE IF NOT EXISTS locations (
 CREATE INDEX IF NOT EXISTS idx_locations_parent ON locations(parent_id);
 CREATE INDEX IF NOT EXISTS idx_locations_level  ON locations(level);
 
-COMMENT ON TABLE  locations              IS '地区表：省/市/区三级行政区划';
+COMMENT ON TABLE  locations              IS '地区表：我国法定五级行政区划 + 末端建筑物层级，存储省/地级/县级/乡级/村级及其下小区/楼栋/单元/楼层/室等具体地址';
 COMMENT ON COLUMN locations.id            IS '主键ID';
 COMMENT ON COLUMN locations.parent_id     IS '父级ID（外键 locations.id，根节点为 NULL）';
 COMMENT ON COLUMN locations.name          IS '地区名称';
 COMMENT ON COLUMN locations.code          IS '行政区划代码（国标）';
-COMMENT ON COLUMN locations.level         IS '级别：1省 2市 3区';
+COMMENT ON COLUMN locations.level         IS '级别：1省级（省/自治区/直辖市/特别行政区） 2地级（地级市/地区/自治州/盟） 3县级（县/县级市/市辖区/自治县/旗/自治旗/林区/特区） 4乡级（乡/民族乡/镇/街道） 5村级（村委会/居委会） 6起表示具体建筑物名（小区/院落 → 楼栋 → 单元 → 楼层 → 室）';
 COMMENT ON COLUMN locations.sort_order    IS '排序权重';
 COMMENT ON COLUMN locations.created_at    IS '创建时间';
 COMMENT ON COLUMN locations.updated_at    IS '更新时间';

@@ -16,6 +16,10 @@ ehthumbs.db
 .Spotlight-V100
 .Trashes
 
+# ====== 服务器配置 ======
+.htaccess
+.well-known/
+
 # ====== IDE ======
 .idea/
 .vscode/
