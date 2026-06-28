@@ -18,8 +18,10 @@ BEGIN;
 -- ================================================================
 -- 1) 演示用户：20 个 role=2 老板，复用同一个 shop_id (Tony 工作室) 即可
 -- ================================================================
-INSERT INTO users (id, nickname, role, status, created_at, updated_at)
-SELECT gen_random_uuid(), '演示理发师 ' || g, 2, 1, NOW(), NOW()
+-- phone 用 '1390009000X' 占位，X 跟 g 走，确保 UNIQUE NOT NULL 满足
+-- password_hash 留空（演示数据，无须登录）
+INSERT INTO users (id, phone, nickname, role, status, created_at, updated_at)
+SELECT gen_random_uuid(), '1390009000' || LPAD(g::text, 2, '0'), '演示理发师 ' || g, 2, 1, NOW(), NOW()
   FROM generate_series(1, 20) g
 ON CONFLICT DO NOTHING;
 
@@ -57,6 +59,7 @@ SELECT
     NOW()
   FROM users u, generate_series(1, 20) g
  WHERE u.nickname = '演示理发师 ' || g
+   AND u.phone = '1390009000' || LPAD(g::text, 2, '0')
 ON CONFLICT (user_id) DO NOTHING;
 
 -- ================================================================
