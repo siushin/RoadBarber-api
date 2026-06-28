@@ -28,9 +28,9 @@ func RegisterRoutes(app *fiber.App) {
 	admin.Patch("/merchants/:id/verify", adminHandler.VerifyMerchant)
 
 	// 商家入驻申请
-	admin.Get("/merchant-apply/applies", adminHandler.ListApplies)
-	admin.Patch("/merchant-apply/applies/:id/approve", adminHandler.ApproveApply)
-	admin.Patch("/merchant-apply/applies/:id/reject", adminHandler.RejectApply)
+	admin.Get("/merchant/applies", adminHandler.ListApplies)
+	admin.Patch("/merchant/applies/:id/approve", adminHandler.ApproveApply)
+	admin.Patch("/merchant/applies/:id/reject", adminHandler.RejectApply)
 
 	// 店铺管理
 	admin.Get("/shops", shopHandler.List)

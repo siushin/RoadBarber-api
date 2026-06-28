@@ -20,7 +20,7 @@ func RegisterRoutes(app *fiber.App) {
 	api := app.Group("/api")
 
 	// 商家入驻申请（公开）
-	apply := api.Group("/merchant-apply")
+	apply := api.Group("/merchant")
 	apply.Post("/apply", handler.NewMerchantApplyHandler().Apply)
 	apply.Get("/apply", handler.NewMerchantApplyHandler().MyApplies)
 
