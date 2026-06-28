@@ -1,9 +1,9 @@
 package common
 
 import (
-	"roadbarber/backend/internal/middleware"
-	"roadbarber/backend/internal/modules/common/handler"
-	"roadbarber/backend/pkg/utils"
+	"roadbarber/api/internal/middleware"
+	"roadbarber/api/internal/modules/common/handler"
+	"roadbarber/api/pkg/utils"
 
 	"github.com/gofiber/fiber/v2"
 )

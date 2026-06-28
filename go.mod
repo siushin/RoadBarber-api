@@ -1,4 +1,4 @@
-module roadbarber/backend
+module roadbarber/api
 
 go 1.24.0
 

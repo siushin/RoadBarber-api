@@ -1,7 +1,7 @@
 package models
 
 import (
-	"roadbarber/backend/internal/config"
+	"roadbarber/api/internal/config"
 )
 
 // AutoMigrate 自动迁移所有数据表

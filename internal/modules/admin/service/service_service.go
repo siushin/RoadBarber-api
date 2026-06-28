@@ -3,8 +3,8 @@ package service
 import (
 	"errors"
 
-	"roadbarber/backend/internal/config"
-	"roadbarber/backend/internal/models"
+	"roadbarber/api/internal/config"
+	"roadbarber/api/internal/models"
 )
 
 type AdminServiceItemService struct{}

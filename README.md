@@ -1,4 +1,4 @@
-# RoadBarber Backend
+# RoadBarber API
 
 > Go Fiber + GORM + PostgreSQL 模块化单体后端。
 > 业务模块：`common`（认证/地区）/ `customer` / `merchant` / `admin`
@@ -6,7 +6,7 @@
 ## 目录结构
 
 ```
-backend/
+api/
 ├── cmd/                    # 入口（main.go 启动时自动迁移）
 ├── internal/
 │   ├── config/             # 全局配置 + DB/Redis 初始化
@@ -62,7 +62,7 @@ go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@lat
 ### Makefile 命令
 
 ```bash
-cd backend
+cd api
 
 # 升级到最新版本（启动后端也会自动执行）
 make migrate/up
@@ -152,7 +152,7 @@ createdb -O barber barber         # 或 CREATE DATABASE barber OWNER barber;
 brew install golang-migrate
 
 # 3. 配置 + 启动
-cd backend
+cd api
 cp .env.example .env
 # 修改 .env 里的 DB_USER / DB_PASSWORD / DB_NAME
 

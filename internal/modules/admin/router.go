@@ -1,8 +1,8 @@
 package admin
 
 import (
-	"roadbarber/backend/internal/middleware"
-	"roadbarber/backend/internal/modules/admin/handler"
+	"roadbarber/api/internal/middleware"
+	"roadbarber/api/internal/modules/admin/handler"
 
 	"github.com/gofiber/fiber/v2"
 )

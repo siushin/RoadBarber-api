@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"roadbarber/backend/internal/models"
-	"roadbarber/backend/internal/modules/admin/service"
-	"roadbarber/backend/pkg/response"
+	"roadbarber/api/internal/models"
+	"roadbarber/api/internal/modules/admin/service"
+	"roadbarber/api/pkg/response"
 
 	"github.com/gofiber/fiber/v2"
 )

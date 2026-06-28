@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"roadbarber/backend/internal/config"
-	"roadbarber/backend/internal/models"
+	"roadbarber/api/internal/config"
+	"roadbarber/api/internal/models"
 )
 
 type MerchantReviewService struct{}

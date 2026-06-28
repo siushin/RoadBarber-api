@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"roadbarber/backend/pkg/response"
+	"roadbarber/api/pkg/response"
 
 	"github.com/gofiber/fiber/v2"
 )

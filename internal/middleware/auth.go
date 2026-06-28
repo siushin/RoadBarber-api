@@ -3,9 +3,9 @@ package middleware
 import (
 	"strings"
 
-	"roadbarber/backend/internal/config"
-	"roadbarber/backend/pkg/response"
-	"roadbarber/backend/pkg/utils"
+	"roadbarber/api/internal/config"
+	"roadbarber/api/pkg/response"
+	"roadbarber/api/pkg/utils"
 
 	"github.com/gofiber/fiber/v2"
 )

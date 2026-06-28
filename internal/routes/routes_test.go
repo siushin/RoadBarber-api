@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"roadbarber/backend/internal/config"
-	"roadbarber/backend/pkg/utils"
+	"roadbarber/api/internal/config"
+	"roadbarber/api/pkg/utils"
 
 	"github.com/gofiber/fiber/v2"
 )

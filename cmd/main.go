@@ -5,11 +5,11 @@ import (
 	"log"
 	"os"
 
-	"roadbarber/backend/internal/config"
-	dbmigrate "roadbarber/backend/internal/migrate"
-	"roadbarber/backend/internal/models"
-	"roadbarber/backend/internal/routes"
-	"roadbarber/backend/pkg/utils"
+	"roadbarber/api/internal/config"
+	dbmigrate "roadbarber/api/internal/migrate"
+	"roadbarber/api/internal/models"
+	"roadbarber/api/internal/routes"
+	"roadbarber/api/pkg/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"

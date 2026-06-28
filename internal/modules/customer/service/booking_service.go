@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"roadbarber/backend/internal/config"
-	"roadbarber/backend/internal/models"
+	"roadbarber/api/internal/config"
+	"roadbarber/api/internal/models"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

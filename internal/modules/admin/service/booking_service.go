@@ -3,8 +3,8 @@ package service
 import (
 	"time"
 
-	"roadbarber/backend/internal/config"
-	"roadbarber/backend/internal/models"
+	"roadbarber/api/internal/config"
+	"roadbarber/api/internal/models"
 )
 
 type AdminBookingService struct{}

@@ -1,8 +1,8 @@
 package customer
 
 import (
-	"roadbarber/backend/internal/middleware"
-	"roadbarber/backend/internal/modules/customer/handler"
+	"roadbarber/api/internal/middleware"
+	"roadbarber/api/internal/modules/customer/handler"
 
 	"github.com/gofiber/fiber/v2"
 )

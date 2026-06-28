@@ -1,4 +1,4 @@
-# RoadBarber Backend（后端 API）
+# RoadBarber API（后端 API）
 
 Go Fiber + GORM + PostgreSQL 后端服务，按业务模块化组织（customer / merchant / admin / common）。
 
@@ -13,19 +13,7 @@ go test ./...         # 运行测试
 
 ## 分支规范
 
-| 分支 | 用途 |
-|------|------|
-| `main` | 生产环境分支，始终保持可发布状态，仅接受来自 `release-*` 或 `hotfix-*` 的合并 |
-| `develop` | 主开发分支，包含所有已完成的功能 |
-| `feature/*` | 功能开发分支，从 `develop` 切出，完成后合并回 `develop` |
-| `release/*` | 发布准备分支，用于版本号 bump / 小修，从 `develop` 切出 |
-| `hotfix/*` | 紧急修复分支，从 `main` 切出，修复后同时合并回 `main` 和 `develop` |
-
-分支命名示例：
-- `feature/customer-booking-flow`
-- `feature/admin-merchant-verify`
-- `release/v1.0.0`
-- `hotfix/fix-jwt-expire`
+只保留一个 `main` 主分支，所有改动直接提交到 `main`。
 
 ## Commit 提交规范（Angular 规范）
 
@@ -89,7 +77,7 @@ Closes #123
 ## 目录约定
 
 ```
-backend/
+api/
 ├── cmd/                 # 入口
 ├── internal/
 │   ├── config/          # 配置

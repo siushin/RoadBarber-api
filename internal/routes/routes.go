@@ -1,12 +1,12 @@
 package routes
 
 import (
-	"roadbarber/backend/internal/config"
-	"roadbarber/backend/internal/modules/admin"
-	"roadbarber/backend/internal/modules/common"
-	"roadbarber/backend/internal/modules/customer"
-	"roadbarber/backend/internal/modules/merchant"
-	"roadbarber/backend/pkg/utils"
+	"roadbarber/api/internal/config"
+	"roadbarber/api/internal/modules/admin"
+	"roadbarber/api/internal/modules/common"
+	"roadbarber/api/internal/modules/customer"
+	"roadbarber/api/internal/modules/merchant"
+	"roadbarber/api/pkg/utils"
 
 	"github.com/gofiber/fiber/v2"
 )

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"roadbarber/backend/internal/config"
-	"roadbarber/backend/internal/models"
-	"roadbarber/backend/pkg/utils"
+	"roadbarber/api/internal/config"
+	"roadbarber/api/internal/models"
+	"roadbarber/api/pkg/utils"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

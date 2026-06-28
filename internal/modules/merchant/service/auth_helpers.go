@@ -1,8 +1,8 @@
 package service
 
 import (
-	"roadbarber/backend/internal/config"
-	"roadbarber/backend/internal/models"
+	"roadbarber/api/internal/config"
+	"roadbarber/api/internal/models"
 )
 
 // isAdminUser 判断 userID 是否对应超级管理员（role=3）

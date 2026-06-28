@@ -1,8 +1,8 @@
 package merchant
 
 import (
-	"roadbarber/backend/internal/middleware"
-	"roadbarber/backend/internal/modules/merchant/handler"
+	"roadbarber/api/internal/middleware"
+	"roadbarber/api/internal/modules/merchant/handler"
 
 	"github.com/gofiber/fiber/v2"
 )

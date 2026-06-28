@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"roadbarber/backend/pkg/utils"
+	"roadbarber/api/pkg/utils"
 )
 
 // NewSMSProvider 根据环境变量选择短信服务商：
