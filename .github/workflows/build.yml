@@ -1,0 +1,164 @@
+name: Build API
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# 取消旧 workflow
+concurrency:
+  group: api-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Job 1：Action runner 上编译 Go 二进制，用于 PR 校验和产物下载
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go 1.24
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Show versions
+        run: |
+          go version
+          uname -a
+
+      - name: Verify go.mod
+        run: |
+          head -5 go.mod
+          echo "---"
+          go mod verify
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Build
+        run: |
+          mkdir -p bin
+          CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/roadbarber-api ./cmd/main.go
+          ls -la bin/
+          file bin/roadbarber-api
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: roadbarber-api-linux-amd64
+          path: bin/roadbarber-api
+          retention-days: 7
+          if-no-files-found: error
+
+  # Job 2：仅 main 分支部署，SSH 到服务器用 www 用户身份
+  # 拉取最新代码 → go build → 重启 systemd 服务
+  deploy:
+    name: Deploy (git pull + build + restart)
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Setup SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+
+          : "${SSH_PRIVATE_KEY:?缺少 secrets.SSH_PRIVATE_KEY}"
+          : "${SSH_HOST:?缺少 secrets.SSH_HOST}"
+          : "${SSH_USER:?缺少 secrets.SSH_USER}"
+          : "${SSH_PORT:?缺少 secrets.SSH_PORT}"
+          : "${DEPLOY_PATH:?缺少 secrets.DEPLOY_PATH}"
+
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          echo "==> 通知服务器 $SSH_USER@$SSH_HOST 拉取 $DEPLOY_PATH 并部署"
+
+          ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" \
+              -o StrictHostKeyChecking=accept-new \
+              "$SSH_USER@$SSH_HOST" \
+              DEPLOY_PATH="$DEPLOY_PATH" \
+              DEPLOY_BRANCH="${{ github.ref_name }}" \
+              'bash -s' <<'REMOTE'
+          set -euo pipefail
+
+          : "${DEPLOY_PATH:?缺少 DEPLOY_PATH}"
+          : "${DEPLOY_BRANCH:?缺少 DEPLOY_BRANCH}"
+
+          cd "$DEPLOY_PATH"
+
+          echo "==> 当前 HEAD: $(git rev-parse --short HEAD)"
+          echo "==> 工作区状态（清理前）："
+          git status --short || true
+
+          # 1. 清理未提交改动 + 未跟踪文件
+          #    -e 显式排除服务器本地文件，避免 Permission denied：
+          #      .well-known/    certbot/acme.sh HTTPS 续期验证用，owner 是 root
+          #      .htaccess       nginx 自动管理（certbot 也可能写入）
+          #      .env*           服务器端本地环境配置（API 启动时 godotenv 加载）
+          #      bin/            编译产物（避免清掉后 build 失败还能回滚）
+          #      uploads/        用户上传文件（业务数据，绝不能丢）
+          echo "==> 清理服务器端 git 改动"
+          git reset --hard HEAD
+          git clean -fdx -e '.well-known/' -e '.htaccess/' -e '.env*' -e 'bin/' -e 'uploads/'
+
+          echo "==> 工作区状态（清理后）："
+          git status --short || echo "    (clean)"
+
+          # 2. 拉取最新代码
+          echo "==> git fetch origin"
+          git fetch origin
+
+          echo "==> git reset --hard origin/$DEPLOY_BRANCH"
+          git reset --hard "origin/$DEPLOY_BRANCH"
+
+          echo "==> 当前 HEAD（部署后）: $(git rev-parse --short HEAD)"
+
+          echo "==> go: $(go version 2>/dev/null || echo 'NOT INSTALLED')"
+
+          # 3. 装 Go 模块依赖
+          echo "==> go mod download"
+          go mod download
+
+          # 4. 编译二进制（CGO_ENABLED=0 静态链接，减小体积、提高可移植性）
+          echo "==> go build"
+          mkdir -p bin
+          CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/roadbarber-api ./cmd/main.go
+          ls -la bin/
+
+          # 5. 重启 systemd 服务
+          echo "==> sudo systemctl restart roadbarber-api"
+          sudo systemctl restart roadbarber-api
+          sleep 2
+
+          echo "==> 服务状态："
+          sudo systemctl is-active roadbarber-api
+          sudo systemctl status roadbarber-api --no-pager | head -20
+
+          echo ""
+          echo "==> api 部署完成"
+          REMOTE
+
+          echo "==> Action 侧部署步骤结束"

@@ -1,0 +1,64 @@
+# RoadBarber API systemd service
+# 部署位置：/etc/systemd/system/roadbarber-api.service
+# 启用：sudo systemctl daemon-reload && sudo systemctl enable --now roadbarber-api
+# 查看日志：sudo journalctl -u roadbarber-api -f
+#
+# 部署流程：
+#   1. GitHub Actions SSH 到服务器，www 用户身份
+#   2. cd /www/wwwroot/RoadBarber/api && git reset --hard origin/main
+#   3. go build -o bin/roadbarber-api ./cmd/main.go
+#   4. sudo systemctl restart roadbarber-api
+#
+# 注意事项：
+#   - 用户 www 需要 sudo 权限执行 systemctl（见 sudoers 配置）
+#   - WorkingDirectory 必须指向项目根（启动时找 migrations/ 和 uploads/）
+#   - EnvironmentFile=-/.../api/.env 不存在也不会报错
+#   - After=network.target 等待网络；PostgreSQL/Redis 不在本机时删掉对应行
+
+[Unit]
+Description=RoadBarber API (Go Fiber + GORM)
+Documentation=https://github.com/siushin/RoadBarber-api
+After=network.target
+# PostgreSQL / Redis 在同一台服务器时才需要下面两行；不在时删除
+# After=postgresql.service redis-server.service
+# Wants=postgresql.service redis-server.service
+
+[Service]
+Type=simple
+User=www
+Group=www
+
+# 项目根目录（git clone 位置）
+WorkingDirectory=/www/wwwroot/RoadBarber/api
+
+# 启动二进制（由 GitHub Actions 编译后替换）
+ExecStart=/www/wwwroot/RoadBarber/api/bin/roadbarber-api
+
+# 失败时自动重启
+Restart=always
+RestartSec=3
+# 重启上限：60 秒内最多 5 次，避免无限重启循环刷日志
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# 环境变量
+#   - GIN_MODE=release  关闭 gin debug 日志
+#   - TZ=Asia/Shanghai  强制时区
+#   - 业务相关 DB/Redis 等连接串走 .env 文件（不写进 unit 避免泄漏）
+Environment=GIN_MODE=release
+Environment=TZ=Asia/Shanghai
+EnvironmentFile=-/www/wwwroot/RoadBarber/api/.env
+
+# 安全加固
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+# 日志走 journald（journalctl -u roadbarber-api 查看）
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=roadbarber-api
+
+[Install]
+WantedBy=multi-user.target
